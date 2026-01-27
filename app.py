@@ -45,3 +45,19 @@ s_code = sex_options[selected_sex]
 df_plot = df[(df['cat01_code'] == u_code) & 
              (df['cat02_code'] == s_code) & 
              (df['tab_code'].isin([100, 120]))]
+
+# st.tabs
+tab1, tab2 = st.tabs(['推移グラフ','抽出データ'])
+
+with tab1:
+    fig = px.line(df_plot, 
+                  x='時間軸(10月)', 
+                  y='value', 
+                  color='表章項目',
+                  title=f'{selected_univ}・{selected_sex}の就職状況推移',
+                  markers=True,
+                  labels={'value':'割合(%)'})
+    st.plotly_chart(fig)
+
+with tab2:
+    st.dataframe(df_plot[['時間軸(10月)', '表章項目', 'value']])
