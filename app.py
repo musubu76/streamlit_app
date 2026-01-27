@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
-import matplotlib.pyplot as plt
 
 st.title('大学卒業予定者の就職状況')
 
@@ -17,7 +15,7 @@ st.header('1. 就職希望率と内定率の比較')
 
 # 年度選択
 year_list = df_basic['時間軸(10月)'].unique()
-selected_year = st.sidebar.selectbox('年度を選択してください', year_list)
+selected_year = st.sidebar.selectbox('1.年度を選択してください', year_list)
 
 df_year = df_basic[df_basic['時間軸(10月)'] == selected_year]
 
@@ -25,6 +23,25 @@ df_year = df_basic[df_basic['時間軸(10月)'] == selected_year]
 wish_rate = df_year[df_year['tab_code'] == 100]['value'].values[0]
 offer_rate = df_year[df_year['tab_code'] == 120]['value'].values[0]
 
+# st.metric
 col1, col2 = st.columns(2)
 col1.metric('就職希望率', f'{wish_rate}%')
 col2.metric('就職内定率', f'{offer_rate}%')
+
+st.header('2. 区分別の時系列推移')
+
+univ_options = {'全体(大学)': 130, '国公立大学': 140, '私立大学': 150}
+sex_options = {'全体(性別)': 100, '男': 110, '女': 120}
+
+with st.sidebar:
+    st.header('2.グラフ条件設定')
+    selected_univ = st.selectbox('学校区分を選択してください', list(univ_options.keys()))
+    selected_sex = st.selectbox('性別を選択してください', list(sex_options.keys()))
+
+u_code = univ_options[selected_univ]
+s_code = sex_options[selected_sex]
+
+# 就職希望率:100、就職内定率:120
+df_plot = df[(df['cat01_code'] == u_code) & 
+             (df['cat02_code'] == s_code) & 
+             (df['tab_code'].isin([100, 120]))]
