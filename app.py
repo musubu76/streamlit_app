@@ -50,6 +50,7 @@ df_plot = df[(df['cat01_code'] == u_code) &
 tab1, tab2 = st.tabs(['推移グラフ','抽出データ'])
 
 with tab1:
+    # 推移グラフ
     fig = px.line(df_plot, 
                   x='時間軸(10月)', 
                   y='value', 
@@ -60,4 +61,14 @@ with tab1:
     st.plotly_chart(fig)
 
 with tab2:
+    # 抽出データ
     st.dataframe(df_plot[['時間軸(10月)', '表章項目', 'value']])
+
+    # st.download_button
+    csv = df_plot.to_csv(index=False).encode('utf-8-sig')
+    st.download_button(
+        label="抽出データをCSVとしてダウンロード",
+        data=csv,
+        file_name=f'{selected_univ}_{selected_sex}.csv',
+        mime='text/csv'
+    )
