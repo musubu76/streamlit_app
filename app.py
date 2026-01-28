@@ -8,10 +8,10 @@ df = pd.read_csv('FEH_00400402_260126104754.csv', encoding='shift_jis')
 
 df['value'] = pd.to_numeric(df['value'], errors='coerce')
 
+st.header('1. 年度別比較')
+
 # 全体(大学):130、全体(性別):100
 df_basic = df[(df['cat01_code'] == 130) & (df['cat02_code'] == 100)]
-
-st.header('1. 就職希望率と内定率の比較')
 
 # 年度選択
 year_list = df_basic['時間軸(10月)'].unique()
@@ -23,10 +23,26 @@ df_year = df_basic[df_basic['時間軸(10月)'] == selected_year]
 wish_rate = df_year[df_year['tab_code'] == 100]['value'].values[0]
 offer_rate = df_year[df_year['tab_code'] == 120]['value'].values[0]
 
+st.write(f'### {selected_year} 就職希望率と内定率の比較')
+
 # st.metric
 col1, col2 = st.columns(2)
 col1.metric('就職希望率', f'{wish_rate}%')
 col2.metric('就職内定率', f'{offer_rate}%')
+
+st.write(f'### {selected_year} 国公立vs私立 内定率の比較')
+df_compare = df[(df['時間軸(10月)'] == selected_year) & 
+                (df['cat02_code'] == 100) & 
+                (df['tab_code'] == 120) & 
+                (df['cat01_code'].isin([140, 150]))]
+
+fig_bar = px.bar(df_compare, 
+                 x='学校区分', 
+                 y='value', 
+                 color='学校区分',
+                 text_auto=True,
+                 labels={'value':'内定率(%)'})
+st.plotly_chart(fig_bar)
 
 st.header('2. 区分別の時系列推移')
 
@@ -39,10 +55,9 @@ with st.expander('操作方法'):
 univ_options = {'全体(大学)': 130, '国公立大学': 140, '私立大学': 150}
 sex_options = {'全体(性別)': 100, '男': 110, '女': 120}
 
-with st.sidebar:
-    st.header('2.グラフ条件設定')
-    selected_univ = st.selectbox('学校区分を選択してください', list(univ_options.keys()))
-    selected_sex = st.selectbox('性別を選択してください', list(sex_options.keys()))
+st.sidebar.header('2.グラフ条件設定')
+selected_univ = st.sidebar.selectbox('学校区分を選択してください', list(univ_options.keys()))
+selected_sex = st.sidebar.selectbox('性別を選択してください', list(sex_options.keys()))
 
 u_code = univ_options[selected_univ]
 s_code = sex_options[selected_sex]
