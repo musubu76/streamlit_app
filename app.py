@@ -1,17 +1,41 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import altair as alt
+
+# ドーナツ関数
+def make_donut(input_response, input_text, input_color):
+    if input_color == 'blue': 
+        chart_color = ['#29b5e8', '#155F7A']
+    if input_color == 'green': 
+        chart_color = ['#27AE60', '#12783D']
+        
+    source = pd.DataFrame({
+        "Topic": ['', input_text],
+        "% value": [100 - input_response, input_response]
+    })
+    
+    plot = alt.Chart(source).mark_arc(innerRadius=45, cornerRadius=25).encode(
+        theta="% value",
+        color=alt.Color("Topic:N",
+                        scale=alt.Scale(domain=[input_text, ''], range=chart_color),
+                        legend=None),
+    ).properties(width=130, height=130)
+    
+    text = plot.mark_text(align='center', color="#29b5e8", fontSize=28, fontWeight=700).encode(
+        text=alt.value(f'{input_response}%')
+    )
+    return plot + text
+
+df = pd.read_csv('FEH_00400402_260126104754.csv', encoding='shift_jis')
+df['value'] = pd.to_numeric(df['value'], errors='coerce')
 
 st.title('大学卒業予定者の就職状況')
 
 # st.expander
 with st.expander('概要・目的'):
-    st.write('概要:1996年から2025年までの大学卒業予定者における就職状況を可視化した分析ツールです。')
-    st.write('目的:年度ごとの比較や、時系列での変化を分析することで、約30年間の就職状況への理解を深めます。')
-
-df = pd.read_csv('FEH_00400402_260126104754.csv', encoding='shift_jis')
-
-df['value'] = pd.to_numeric(df['value'], errors='coerce')
+    st.write('概要: 1996年から2025年までの大学卒業予定者における就職状況を可視化した分析ツールです。')
+    st.write('目的: 年度ごとの比較や、時系列での変化を分析することで、約30年間の就職状況への理解を深めます。')
 
 st.header('1. 年度別比較')
 
@@ -33,15 +57,21 @@ df_year = df_basic[df_basic['時間軸(10月)'] == selected_year]
 wish_rate = df_year[df_year['tab_code'] == 100]['value'].values[0]
 offer_rate = df_year[df_year['tab_code'] == 120]['value'].values[0]
 
-st.write(f'### {selected_year} 就職希望率vs内定率 (全体)')
+st.subheader(f'{selected_year} 就職希望率vs内定率 (全体)')
 
-# st.metric
+# st.altair_chart
 col1, col2 = st.columns(2)
-col1.metric('就職希望率', f'{wish_rate}%')
-col2.metric('就職内定率', f'{offer_rate}%')
 
-# 就職希望率:100、就職内定率:120、国公立:140、私立:150
-st.write(f'### {selected_year} 国公立vs私立 (内定率の比較)')
+with col1:
+    st.write('🔵 就職希望率')
+    st.altair_chart(make_donut(wish_rate, '就職希望率', 'blue'), use_container_width=True)
+
+with col2:
+    st.write('🟢 就職内定率')
+    st.altair_chart(make_donut(offer_rate, '就職内定率', 'green'), use_container_width=True)
+
+# 全体(性別):100、就職内定率:120、国公立:140、私立:150
+st.subheader(f'{selected_year} 国公立vs私立 (内定率の比較)')
 df_compare = df[(df['時間軸(10月)'] == selected_year) & 
                 (df['cat02_code'] == 100) & 
                 (df['tab_code'] == 120) & 
@@ -87,13 +117,14 @@ with tab1:
                   x='時間軸(10月)', 
                   y='value', 
                   color='表章項目',
-                  title=f'{selected_univ}・{selected_sex}の就職状況推移',
                   markers=True,
                   labels={'value':'割合(%)'})
+    st.subheader(f'{selected_univ}・{selected_sex}の就職状況推移')
     st.plotly_chart(fig)
 
 with tab2:
     # 抽出データ
+    st.subheader(f'{selected_univ}・{selected_sex}の抽出データ')
     st.dataframe(df_plot[['時間軸(10月)', '表章項目', 'value']])
 
     # st.download_button
